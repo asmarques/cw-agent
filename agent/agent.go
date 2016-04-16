@@ -42,7 +42,7 @@ func New(config *Config) (*Agent, error) {
 	// - EC2 metadata of current host
 	if config.Region != "" {
 		awsConfig.Region = aws.String(config.Region)
-	} else if region, found := os.LookupEnv(awsRegionEnv); found {
+	} else if region := os.Getenv(awsRegionEnv); region != "" {
 		awsConfig.Region = aws.String(region)
 	} else {
 		region, err := svcMetadata.Region()
