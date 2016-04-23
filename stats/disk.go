@@ -2,13 +2,14 @@ package stats
 
 import (
 	"fmt"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 // GetDiskStats retrieves disk statistics for the specified path
 func GetDiskStats(path string) (*DiskStats, error) {
-	stat := &syscall.Statfs_t{}
-	err := syscall.Statfs(path, stat)
+	stat := &unix.Statfs_t{}
+	err := unix.Statfs(path, stat)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving disk stats for '%s': %s", path, err)
 	}
