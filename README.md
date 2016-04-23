@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/asmarques/cw-agent.svg)](https://travis-ci.org/asmarques/cw-agent)
 
-An agent for reporting memory and disk metrics to AWS CloudWatch.
+An agent for reporting memory and disk metrics to AWS CloudWatch. Supports Linux and FreeBSD hosts.
 
 ## Usage
 
@@ -26,7 +26,7 @@ cw-agent -all-metrics -once
 - [Download](https://github.com/asmarques/cw-agent/releases) a binary for the latest version
 - Copy `cw-agent` to the filesystem of the host you wish to report metrics for
 - Ensure the binary is executable: `chmod +x cw-agent`
-- Run `cw-agent` from Upstart or systemd (recommended) or using cron
+- Run `cw-agent` as a process managed by your init system (e.g. systemd) or periodically from cron
  
 ## Credentials
 
