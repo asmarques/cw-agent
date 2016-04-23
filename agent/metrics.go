@@ -91,7 +91,7 @@ func (a *Agent) getMemoryMetrics() ([]*metric, error) {
 	memUnit := a.config.getMemoryUnit()
 
 	if a.config.hasMemMetricsSelected() {
-		mem, err := stats.GetMemoryStats(a.config.MemSharedBuffersAsUsed)
+		mem, err := stats.GetMemoryStats()
 		if err != nil {
 			return nil, err
 		}

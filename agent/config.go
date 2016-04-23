@@ -17,14 +17,13 @@ type Config struct {
 	AllMetrics bool
 
 	// Memory
-	MemUnit                string
-	MemSharedBuffersAsUsed bool
-	MemAvailable           bool
-	MemUsed                bool
-	MemUtilization         bool
-	SwapAvailable          bool
-	SwapUsed               bool
-	SwapUtilization        bool
+	MemUnit         string
+	MemAvailable    bool
+	MemUsed         bool
+	MemUtilization  bool
+	SwapAvailable   bool
+	SwapUsed        bool
+	SwapUtilization bool
 
 	// Disk
 	DiskUnit        string

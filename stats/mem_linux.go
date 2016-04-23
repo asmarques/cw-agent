@@ -13,7 +13,7 @@ const memInfoPath = "/proc/meminfo"
 var memInfoExp = regexp.MustCompile(`^(.+):\s+(\d+)`)
 
 // GetMemoryStats returns memory and swap statistics
-func GetMemoryStats(sharedBuffersAsUsed bool) (*MemoryStats, error) {
+func GetMemoryStats() (*MemoryStats, error) {
 	file, err := os.Open(memInfoPath)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving memory stats from %s: %s", memInfoPath, err)
@@ -36,10 +36,7 @@ func GetMemoryStats(sharedBuffersAsUsed bool) (*MemoryStats, error) {
 		}
 	}
 
-	freeMem := mem["MemFree"]
-	if !sharedBuffersAsUsed {
-		freeMem += mem["Buffers"] + mem["Cached"]
-	}
+	freeMem := mem["MemFree"] + mem["Buffers"] + mem["Cached"]
 
 	stats := &MemoryStats{
 		MemoryAvailable:   freeMem,

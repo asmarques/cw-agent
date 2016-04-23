@@ -19,7 +19,6 @@ func init() {
 
 	// Memory metrics
 	flag.StringVar(&config.MemUnit, "mem-unit", "MB", "specifies unit for memory and swap reporting: B, KB, MB, GB or TB")
-	flag.BoolVar(&config.MemSharedBuffersAsUsed, "mem-shared-buffers-as-used", false, "reports shared and buffered memory as used memory")
 	flag.BoolVar(&config.MemAvailable, "mem-avail", false, "reports available memory")
 	flag.BoolVar(&config.MemUsed, "mem-used", false, "reports used memory")
 	flag.BoolVar(&config.MemUtilization, "mem-util", false, "reports memory utilization percentage")
