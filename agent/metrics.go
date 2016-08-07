@@ -21,6 +21,7 @@ const (
 	metricDiskSpaceAvailable   = "DiskSpaceAvailable"
 	metricDiskSpaceUsed        = "DiskSpaceUsed"
 	metricDiskSpaceUtilization = "DiskSpaceUtilization"
+	metricDataMaxSize          = 20
 )
 
 type metric struct {
@@ -43,11 +44,11 @@ func (a *Agent) putMetrics() error {
 		return err
 	}
 
-	metricData := []*cloudwatch.MetricDatum{}
-	defaultDimensions := []*cloudwatch.Dimension{}
+	var metricData []*cloudwatch.MetricDatum
+	var dimensions []*cloudwatch.Dimension
 
-	for key, value := range a.extraDimensions {
-		defaultDimensions = append(defaultDimensions, &cloudwatch.Dimension{
+	for key, value := range a.baseDimensions {
+		dimensions = append(dimensions, &cloudwatch.Dimension{
 			Name:  aws.String(key),
 			Value: aws.String(value),
 		})
@@ -58,8 +59,7 @@ func (a *Agent) putMetrics() error {
 			continue
 		}
 
-		dimensions := defaultDimensions[0:1:1]
-
+		var extraDimensions []*cloudwatch.Dimension
 		for name, value := range metric.dimensions {
 			dimensions = append(dimensions, &cloudwatch.Dimension{
 				Name:  aws.String(name),
@@ -67,23 +67,31 @@ func (a *Agent) putMetrics() error {
 			})
 		}
 
-		metricData = append(metricData,
-			&cloudwatch.MetricDatum{
-				MetricName: aws.String(metric.name),
-				Dimensions: dimensions,
-				Timestamp:  aws.Time(now),
-				Unit:       aws.String(metric.unit),
-				Value:      aws.Float64(metric.value),
-			})
+		for _, dimension := range dimensions {
+			metricData = append(metricData,
+				&cloudwatch.MetricDatum{
+					MetricName: aws.String(metric.name),
+					Dimensions: append(extraDimensions, dimension),
+					Timestamp:  aws.Time(now),
+					Unit:       aws.String(metric.unit),
+					Value:      aws.Float64(metric.value),
+				})
+		}
 	}
 
-	params := &cloudwatch.PutMetricDataInput{
-		MetricData: metricData,
-		Namespace:  aws.String(a.config.Namespace),
+	// Split metric data accross multiple requests according to the API limits
+	size := len(metricData)
+	for i := 0; i < size; i += metricDataMaxSize {
+		_, err = a.svc.PutMetricData(&cloudwatch.PutMetricDataInput{
+			MetricData: metricData[i:min(i+metricDataMaxSize, size)],
+			Namespace:  aws.String(a.config.Namespace),
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	_, err = a.svc.PutMetricData(params)
-	return err
+	return nil
 }
 
 func (a *Agent) getMemoryMetrics() ([]*metric, error) {
@@ -193,4 +201,11 @@ func (a *Agent) getDiskMetrics() ([]*metric, error) {
 	}
 
 	return metrics, nil
+}
+
+func min(a, b int) int {
+	if a <= b {
+		return a
+	}
+	return b
 }

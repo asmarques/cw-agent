@@ -31,6 +31,9 @@ type Config struct {
 	DiskUsed        bool
 	DiskUtilization bool
 	DiskPaths       string
+
+	// Grouping
+	AutoScaling bool
 }
 
 type unit struct {

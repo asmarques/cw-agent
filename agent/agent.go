@@ -6,23 +6,22 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 )
 
 // Agent is used to retrieve and report metrics from the current host to CloudWatch
 type Agent struct {
-	config          *Config
-	extraDimensions map[string]string
-	svc             *cloudwatch.CloudWatch
+	config         *Config
+	baseDimensions map[string]string
+	svc            *cloudwatch.CloudWatch
 }
 
 const (
-	awsRegionEnv           = "AWS_REGION"
-	instanceIDMetadataKey  = "instance-id"
-	instanceIDDimensionKey = "InstanceId"
-	hostnameDimensionKey   = "Hostname"
+	awsRegionEnv                 = "AWS_REGION"
+	instanceIDDimensionKey       = "InstanceId"
+	autoScalingGroupDimensionKey = "AutoScalingGroupName"
+	hostnameDimensionKey         = "Hostname"
 )
 
 // New creates a new Agent based on the supplied configuration
@@ -32,44 +31,48 @@ func New(config *Config) (*Agent, error) {
 		return nil, fmt.Errorf("configuration error: %s", err)
 	}
 
-	awsConfig := &aws.Config{}
 	awsSession := session.New()
-	svcMetadata := ec2metadata.New(awsSession)
 
-	// Try to determine the AWS region for CloudWatch using the following sources:
+	// Try to determine the AWS region using the following sources:
 	// - Supplied Agent configuration
 	// - Environment variable (AWS_REGION)
 	// - EC2 metadata of current host
 	if config.Region != "" {
-		awsConfig.Region = aws.String(config.Region)
+		awsSession.Config.Region = aws.String(config.Region)
 	} else if region := os.Getenv(awsRegionEnv); region != "" {
-		awsConfig.Region = aws.String(region)
+		awsSession.Config.Region = aws.String(region)
 	} else {
-		region, err := svcMetadata.Region()
+		region, err := getRegion(awsSession)
 		if err != nil {
-			return nil, fmt.Errorf("unable to determine region from metadata service: %s", err)
+			return nil, err
 		}
-		awsConfig.Region = aws.String(region)
+		awsSession.Config.Region = aws.String(region)
 	}
 
-	extraDimensions := make(map[string]string)
-
-	// Try to determine the name of the executing host to associate with the reported metrics
+	// Configure dimensions to aggregate by when reporting metrics
+	dimensions := make(map[string]string)
 	if config.Hostname != "" {
-		extraDimensions[hostnameDimensionKey] = config.Hostname
+		dimensions[hostnameDimensionKey] = config.Hostname
 	} else {
-		instanceID, err := svcMetadata.GetMetadata(instanceIDMetadataKey)
+		instanceID, err := getInstanceID(awsSession)
 		if err != nil {
-			return nil, fmt.Errorf("unable to retrieve key %s from metadata service: %s",
-				instanceIDMetadataKey, err)
+			return nil, err
 		}
-		extraDimensions[instanceIDDimensionKey] = instanceID
+		dimensions[instanceIDDimensionKey] = instanceID
+
+		if config.AutoScaling {
+			autoScalingGroup, err := getAutoScalingGroup(awsSession, instanceID)
+			if err != nil {
+				return nil, err
+			}
+			dimensions[autoScalingGroupDimensionKey] = autoScalingGroup
+		}
 	}
 
 	return &Agent{
-		config:          config,
-		extraDimensions: extraDimensions,
-		svc:             cloudwatch.New(awsSession, awsConfig),
+		config:         config,
+		baseDimensions: dimensions,
+		svc:            cloudwatch.New(awsSession),
 	}, nil
 }
 

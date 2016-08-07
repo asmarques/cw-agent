@@ -32,6 +32,9 @@ func init() {
 	flag.BoolVar(&config.DiskUsed, "disk-used", false, "reports disk space used")
 	flag.BoolVar(&config.DiskUtilization, "disk-util", false, "reports disk space utilization percentage")
 	flag.StringVar(&config.DiskPaths, "disk-paths", "/", "specifies a comma separated list of paths to report disk space for")
+
+	// Grouping
+	flag.BoolVar(&config.AutoScaling, "auto-scaling", false, "reports metrics aggregated by autoscaling group in addition to individual instances")
 }
 
 func main() {
