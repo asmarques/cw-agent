@@ -1,6 +1,6 @@
 # cw-agent
 
-[![Build Status](https://travis-ci.org/asmarques/cw-agent.svg)](https://travis-ci.org/asmarques/cw-agent)
+![Build Status](https://github.com/asmarques/cw-agent/workflows/CI/badge.svg)
 
 An agent for reporting memory and disk metrics to AWS CloudWatch. Supports Linux and FreeBSD hosts.
 
